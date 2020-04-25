@@ -1,4 +1,6 @@
 import 'phaser';
+import { Match3 } from "./match3.js";
+// assets
 import boardImg from '../assets/board_9x9_dark_grey.png';
 import gemsSpritesheet from '../assets/Gems6colours_big.png';
 
@@ -25,7 +27,9 @@ export class Board extends Phaser.Scene {
     }
 
     create() {
-        this.m = []
+        this.match3 = new Match3(nrows, ncols, ngems);
+        this.match3.generateField();
+
         let width = this.game.config.width;
         let height = this.game.config.height;
         this.board = this.add.sprite(width / 2, height / 2, 'board');
@@ -35,14 +39,12 @@ export class Board extends Phaser.Scene {
             y: (height - boardSize) / 2 + cellSize / 2
         };
         for (let row = 0; row < nrows; row++) {
-            this.m[row] = [];
             for (let col = 0; col < ncols; col++) {
                 let x = leftTopPos.x + row * cellSize;
                 let y = leftTopPos.y + col * cellSize;
-                let gem = this.add.sprite(x, y, 'gems', Math.floor(Math.random() * ngems));
+                let gem = this.add.sprite(x, y, 'gems', this.match3.get(row, col));
                 gem.setDisplaySize(gemSize, gemSize);
                 gem.setInteractive();
-                this.m[row][col] = gem;
             }
         }
 
