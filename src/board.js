@@ -12,6 +12,8 @@ const boardSize = 504;
 const cellSize = boardSize / 9;
 const gemSize = cellSize - 16;
 
+var match3 = new Match3(nrows, ncols, ngems);
+
 export class Board extends Phaser.Scene {
     constructor() {
         super("BoardScene");
@@ -27,8 +29,7 @@ export class Board extends Phaser.Scene {
     }
 
     create() {
-        this.match3 = new Match3(nrows, ncols, ngems);
-        this.match3.generateField();
+        match3.generateField();
 
         let width = this.game.config.width;
         let height = this.game.config.height;
@@ -42,9 +43,10 @@ export class Board extends Phaser.Scene {
             for (let col = 0; col < ncols; col++) {
                 let x = leftTopPos.x + row * cellSize;
                 let y = leftTopPos.y + col * cellSize;
-                let gem = this.add.sprite(x, y, 'gems', this.match3.get(row, col));
+                let gem = this.add.sprite(x, y, 'gems', match3.getId(row, col));
                 gem.setDisplaySize(gemSize, gemSize);
                 gem.setInteractive();
+                match3.setGem(row, col, gem);
             }
         }
 
@@ -53,6 +55,18 @@ export class Board extends Phaser.Scene {
         });
         this.input.on("gameobjectout", function (pointer, go) {
             go.setDisplaySize(gemSize, gemSize);
-        })
+        });
+        this.input.on("gameobjectdown", function (pointer, go) {
+            let gems = match3.getNeighbors(go);
+            gems.forEach(gem => {
+                gem.setDisplaySize(gemSize + 6, gemSize + 6);
+            });
+        });
+        this.input.on("gameobjectup", function (pointer, go) {
+            let gems = match3.getNeighbors(go);
+            gems.forEach(gem => {
+                gem.setDisplaySize(gemSize, gemSize);
+            });
+        });
     }
 }
