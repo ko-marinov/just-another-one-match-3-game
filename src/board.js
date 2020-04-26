@@ -1,6 +1,7 @@
 import 'phaser';
 import { Match3 } from "./match3.js";
 // assets
+import bgImg from '../assets/background.png';
 import boardImg from '../assets/board_9x9_dark_grey.png';
 import gemsSpritesheet from '../assets/Gems6colours_big.png';
 
@@ -29,6 +30,7 @@ export class Board extends Phaser.Scene {
     }
 
     preload() {
+        this.load.image("bg", bgImg);
         this.load.image("board", boardImg);
         this.load.spritesheet("gems", gemsSpritesheet, {
             frameWidth: 16,
@@ -43,6 +45,7 @@ export class Board extends Phaser.Scene {
 
         let width = this.game.config.width;
         let height = this.game.config.height;
+        this.add.sprite(width / 2, height / 2, 'bg');
         this.board = this.add.sprite(width / 2, height / 2, 'board');
         this.board.setDisplaySize(boardSize, boardSize);
         leftTopPos = {
