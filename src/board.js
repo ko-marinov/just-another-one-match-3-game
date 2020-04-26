@@ -41,32 +41,66 @@ export class Board extends Phaser.Scene {
         };
         for (let row = 0; row < nrows; row++) {
             for (let col = 0; col < ncols; col++) {
-                let x = leftTopPos.x + row * cellSize;
-                let y = leftTopPos.y + col * cellSize;
+                let x = leftTopPos.x + col * cellSize;
+                let y = leftTopPos.y + row * cellSize;
                 let gem = this.add.sprite(x, y, 'gems', match3.getId(row, col));
                 gem.setDisplaySize(gemSize, gemSize);
                 gem.setInteractive();
+                this.input.on("gameobjectover", onGemOver);
+                this.input.on("gameobjectout", onGemOut);
+                this.input.on("gameobjectdown", onGemDown);
                 match3.setGem(row, col, gem);
             }
         }
-
-        this.input.on("gameobjectover", function (pointer, go) {
-            go.setDisplaySize(gemSize + 6, gemSize + 6);
-        });
-        this.input.on("gameobjectout", function (pointer, go) {
-            go.setDisplaySize(gemSize, gemSize);
-        });
-        this.input.on("gameobjectdown", function (pointer, go) {
-            let gems = match3.getNeighbors(go);
-            gems.forEach(gem => {
-                gem.setDisplaySize(gemSize + 6, gemSize + 6);
-            });
-        });
-        this.input.on("gameobjectup", function (pointer, go) {
-            let gems = match3.getNeighbors(go);
-            gems.forEach(gem => {
-                gem.setDisplaySize(gemSize, gemSize);
-            });
-        });
     }
+}
+
+var selectedGem = null;
+
+function onGemOver(pointer, gem) {
+    gem.setDisplaySize(gemSize + 6, gemSize + 6);
+}
+
+function onGemOut(pointer, gem) {
+    if (gem != selectedGem) {
+        gem.setDisplaySize(gemSize, gemSize);
+    }
+}
+
+function onGemDown(pointer, gem) {
+    if (selectedGem != null) {
+        if (gem === selectedGem) {
+            selectedGem = null;
+            return;
+        }
+        if (match3.getNeighbors(selectedGem).indexOf(gem) != -1) {
+            swapGems(gem, selectedGem);
+            selectedGem = null
+            return;
+        }
+
+        selectedGem.setDisplaySize(gemSize, gemSize);
+    }
+
+    selectedGem = gem;
+}
+
+function swapGems(gem1, gem2) {
+    gem1.setDisplaySize(gemSize, gemSize);
+    gem2.setDisplaySize(gemSize, gemSize);
+
+    let scene = gem1.scene;
+    scene.tweens.add({
+        targets: gem1,
+        duration: 300,
+        x: gem2.x,
+        y: gem2.y
+    });
+    scene.tweens.add({
+        targets: gem2,
+        duration: 300,
+        x: gem1.x,
+        y: gem1.y
+    });
+    match3.swapGems(gem1, gem2);
 }

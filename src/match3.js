@@ -64,4 +64,24 @@ export class Match3 {
         if (j < this.ncols - 1) { neighbors.push(this.getGem(i, j + 1)); }
         return neighbors;
     }
+
+    swapGems(gem1, gem2) {
+        let temp = {
+            r1: gem1.row, c1: gem1.col,
+            r2: gem2.row, c2: gem2.col,
+        }
+        let m = this.m;
+
+        // swap values
+        // swap gems
+        let tGem = m[temp.r1][temp.c1];
+        m[temp.r1][temp.c1] = m[temp.r2][temp.c2];
+        m[temp.r2][temp.c2] = tGem;
+
+        // adjust gems data (rows&cols)
+        gem1.row = temp.r2;
+        gem1.col = temp.c2;
+        gem2.row = temp.r1;
+        gem2.col = temp.c1;
+    }
 }
