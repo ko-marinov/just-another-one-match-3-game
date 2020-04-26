@@ -15,7 +15,7 @@ export class Match3 {
                 do {
                     let gemId = Math.floor(Math.random() * this.ngems);
                     this.m[row][col] = { id: gemId };
-                } while (this.hasMatch(row, col));
+                } while (this.hasMatchAt(row, col));
             }
         }
     }
@@ -38,7 +38,18 @@ export class Match3 {
         return this.get(i, j).gem;
     }
 
-    hasMatch(row, col) {
+    hasMatch() {
+        for (let row = 0; row < this.nrows; row++) {
+            for (let col = 0; col < this.ncols; col++) {
+                if (this.hasMatchAt(row, col)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    hasMatchAt(row, col) {
         let m = this.m;
         let orig = this.m[row][col].id;
         if (row > 1) {

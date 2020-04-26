@@ -74,7 +74,7 @@ function onGemDown(pointer, gem) {
             return;
         }
         if (match3.getNeighbors(selectedGem).indexOf(gem) != -1) {
-            swapGems(gem, selectedGem);
+            swapGems(gem, selectedGem, onCompleteSwapGems);
             selectedGem = null
             return;
         }
@@ -85,7 +85,7 @@ function onGemDown(pointer, gem) {
     selectedGem = gem;
 }
 
-function swapGems(gem1, gem2) {
+function swapGems(gem1, gem2, callback) {
     gem1.setDisplaySize(gemSize, gemSize);
     gem2.setDisplaySize(gemSize, gemSize);
 
@@ -94,7 +94,9 @@ function swapGems(gem1, gem2) {
         targets: gem1,
         duration: 300,
         x: gem2.x,
-        y: gem2.y
+        y: gem2.y,
+        onComplete: callback,
+        onCompleteParams: [gem1, gem2]
     });
     scene.tweens.add({
         targets: gem2,
@@ -103,4 +105,10 @@ function swapGems(gem1, gem2) {
         y: gem1.y
     });
     match3.swapGems(gem1, gem2);
+}
+
+function onCompleteSwapGems(tween, targets, gem1, gem2) {
+    if (!match3.hasMatch()) {
+        swapGems(gem1, gem2, null);
+    }
 }
