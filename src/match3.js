@@ -74,35 +74,37 @@ export class Match3 {
     }
 
     getMatchedGems() {
-        let matched = []
+        let matched = new Set();
         for (let row = 0; row < this.nrows; row++) {
             for (let col = 0; col < this.ncols; col++) {
-                if (this.hasMatchAt(row, col) && !this.getGem(row, col).inMatch) {
-                    this.getMatchAt(row, col).forEach(elem => {
-                        matched.push(elem);
-                    });
-                }
+                this.getMatchAt(row, col).forEach(elem => {
+                    matched.add(elem);
+                });
+
             }
         }
-        return matched;
+        return Array.from(matched);
     }
 
     getMatchAt(row, col) {
-        let match = [];
-        let id = this.getId(row, col);
-        let q = [this.getGem(row, col)];
-        while (q.length) {
-            let gem = q.shift();
-            gem.inMatch = true;
-            match.push(gem);
-            let neighbors = this.getNeighbors(gem);
-            neighbors.forEach(gem => {
-                if (this.getGemId(gem) === id && !gem.inMatch) {
-                    q.push(gem);
-                }
-            });
+        let matched = []
+        let m = this.m;
+        let orig = this.m[row][col].id;
+        if (row > 1) {
+            if (orig == m[row - 1][col].id && orig == m[row - 2][col].id) {
+                matched.push(m[row][col].gem);
+                matched.push(m[row - 1][col].gem);
+                matched.push(m[row - 2][col].gem);
+            }
         }
-        return match;
+        if (col > 1) {
+            if (orig == m[row][col - 1].id && orig == m[row][col - 2].id) {
+                matched.push(m[row][col].gem);
+                matched.push(m[row][col - 1].gem);
+                matched.push(m[row][col - 2].gem);
+            }
+        }
+        return matched;
     }
 
     getNeighbors(gem) {
