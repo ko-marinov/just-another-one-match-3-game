@@ -13,6 +13,15 @@ const cellSize = boardSize / 9;
 const gemSize = cellSize - 16;
 
 var match3 = new Match3(nrows, ncols, ngems);
+var scene;
+var leftTopPos;
+
+function getPosByRowCol(row, col) {
+    return {
+        x: leftTopPos.x + col * cellSize,
+        y: leftTopPos.y + row * cellSize
+    };
+}
 
 export class Board extends Phaser.Scene {
     constructor() {
@@ -29,21 +38,21 @@ export class Board extends Phaser.Scene {
     }
 
     create() {
+        scene = this;
         match3.generateField();
 
         let width = this.game.config.width;
         let height = this.game.config.height;
         this.board = this.add.sprite(width / 2, height / 2, 'board');
         this.board.setDisplaySize(boardSize, boardSize);
-        let leftTopPos = {
+        leftTopPos = {
             x: (width - boardSize) / 2 + cellSize / 2,
             y: (height - boardSize) / 2 + cellSize / 2
         };
         for (let row = 0; row < nrows; row++) {
             for (let col = 0; col < ncols; col++) {
-                let x = leftTopPos.x + col * cellSize;
-                let y = leftTopPos.y + row * cellSize;
-                let gem = this.createGem(x, y, match3.getId(row, col));
+                let pos = getPosByRowCol(row, col);
+                let gem = this.createGem(pos.x, pos.y, match3.getId(row, col));
                 match3.setGem(row, col, gem);
             }
         }
@@ -53,61 +62,63 @@ export class Board extends Phaser.Scene {
         let gem = this.add.sprite(x, y, 'gems', id);
         gem.setDisplaySize(gemSize, gemSize);
         gem.setInteractive();
-        this.input.on("gameobjectover", onGemOver);
-        this.input.on("gameobjectout", onGemOut);
-        this.input.on("gameobjectdown", onGemDown);
+        gem.on("pointerover", onGemOver);
+        gem.on("pointerout", onGemOut);
+        gem.on("pointerdown", onGemDown);
         return gem;
     }
 }
 
 var selectedGem = null;
 
-function onGemOver(pointer, gem) {
-    gem.setDisplaySize(gemSize + 6, gemSize + 6);
+function onGemOver(pointer) {
+    this.setDisplaySize(gemSize + 6, gemSize + 6);
 }
 
-function onGemOut(pointer, gem) {
-    if (gem != selectedGem) {
-        gem.setDisplaySize(gemSize, gemSize);
+function onGemOut(pointer) {
+    if (this != selectedGem) {
+        this.setDisplaySize(gemSize, gemSize);
     }
 }
 
-function onGemDown(pointer, gem) {
+function onGemDown(pointer) {
     if (selectedGem != null) {
-        if (gem === selectedGem) {
+        if (this === selectedGem) {
             selectedGem = null;
             return;
         }
-        if (match3.getNeighbors(selectedGem).indexOf(gem) != -1) {
-            swapGems(gem, selectedGem, onCompleteSwapGems);
-            selectedGem = null
+        if (match3.getNeighbors(selectedGem).indexOf(this) != -1) {
+            swapGems(this, selectedGem, onCompleteSwapGems);
+            selectedGem = null;
             return;
         }
 
         selectedGem.setDisplaySize(gemSize, gemSize);
     }
 
-    selectedGem = gem;
+    selectedGem = this;
 }
 
 function swapGems(gem1, gem2, callback) {
     gem1.setDisplaySize(gemSize, gemSize);
     gem2.setDisplaySize(gemSize, gemSize);
 
-    let scene = gem1.scene;
+    let target1 = getPosByRowCol(gem2.row, gem2.col);
+    let target2 = getPosByRowCol(gem1.row, gem1.col);
+
     scene.tweens.add({
         targets: gem1,
         duration: 300,
-        x: gem2.x,
-        y: gem2.y,
+        x: target1.x,
+        y: target1.y,
         onComplete: callback,
         onCompleteParams: [gem1, gem2]
     });
     scene.tweens.add({
         targets: gem2,
         duration: 300,
-        x: gem1.x,
-        y: gem1.y
+        x: target2.x,
+        y: target2.y
     });
     match3.swapGems(gem1, gem2);
 }
@@ -118,8 +129,12 @@ function onCompleteSwapGems(tween, targets, gem1, gem2) {
         return;
     }
 
+    handleMatches(gem1.scene);
+}
+
+function handleMatches(scene) {
     let match = match3.getMatchedGems();
-    let scene = gem1.scene;
+    if (!match.length) { return; }
     scene.tweens.add({
         targets: match,
         duration: 300,
@@ -133,7 +148,6 @@ function onCompleteSwapGems(tween, targets, gem1, gem2) {
 
 function destroyGems(gems) {
     let velocity = 180;
-    let scene = gems[0].scene;
     let height = scene.game.config.height;
     let topY = (height - boardSize) / 2 - cellSize / 2;
     let gemTransfers = [];
@@ -183,6 +197,7 @@ function destroyGems(gems) {
         }
     }
 
+    let maxDuration = 0;
     gemTransfers.forEach(transfer => {
         scene.tweens.add({
             targets: transfer.gem,
@@ -191,7 +206,12 @@ function destroyGems(gems) {
             y: transfer.y,
             ease: "Power1"
         });
+        if (transfer.dist * velocity > maxDuration) {
+            maxDuration = transfer.dist * velocity;
+        }
     });
+
+    scene.time.delayedCall(maxDuration, handleMatches, [scene]);
 
     gems.forEach(gem => { gem.destroy(); });
 }
