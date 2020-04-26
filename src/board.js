@@ -111,4 +111,16 @@ function onCompleteSwapGems(tween, targets, gem1, gem2) {
     if (!match3.hasMatch()) {
         swapGems(gem1, gem2, null);
     }
+
+    let match = match3.getMatchedGems();
+    let scene = gem1.scene;
+    scene.tweens.add({
+        targets: match,
+        duration: 300,
+        delay: 30,
+        alpha: 0,
+        onComplete: function (tween, targets) {
+            // destroy gems
+        }
+    });
 }

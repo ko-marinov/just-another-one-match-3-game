@@ -38,6 +38,10 @@ export class Match3 {
         return this.get(i, j).gem;
     }
 
+    getGemId(gem) {
+        return this.getId(gem.row, gem.col);
+    }
+
     hasMatch() {
         for (let row = 0; row < this.nrows; row++) {
             for (let col = 0; col < this.ncols; col++) {
@@ -63,6 +67,38 @@ export class Match3 {
             }
         }
         return false;
+    }
+
+    getMatchedGems() {
+        let matched = []
+        for (let row = 0; row < this.nrows; row++) {
+            for (let col = 0; col < this.ncols; col++) {
+                if (this.hasMatchAt(row, col) && !this.getGem(row, col).inMatch) {
+                    this.getMatchAt(row, col).forEach(elem => {
+                        matched.push(elem);
+                    });
+                }
+            }
+        }
+        return matched;
+    }
+
+    getMatchAt(row, col) {
+        let match = [];
+        let id = this.getId(row, col);
+        let q = [this.getGem(row, col)];
+        while (q.length) {
+            let gem = q.shift();
+            gem.inMatch = true;
+            match.push(gem);
+            let neighbors = this.getNeighbors(gem);
+            neighbors.forEach(gem => {
+                if (this.getGemId(gem) === id && !gem.inMatch) {
+                    q.push(gem);
+                }
+            });
+        }
+        return match;
     }
 
     getNeighbors(gem) {
