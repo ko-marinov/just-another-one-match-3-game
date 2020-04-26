@@ -43,15 +43,20 @@ export class Board extends Phaser.Scene {
             for (let col = 0; col < ncols; col++) {
                 let x = leftTopPos.x + col * cellSize;
                 let y = leftTopPos.y + row * cellSize;
-                let gem = this.add.sprite(x, y, 'gems', match3.getId(row, col));
-                gem.setDisplaySize(gemSize, gemSize);
-                gem.setInteractive();
-                this.input.on("gameobjectover", onGemOver);
-                this.input.on("gameobjectout", onGemOut);
-                this.input.on("gameobjectdown", onGemDown);
+                let gem = this.createGem(x, y, match3.getId(row, col));
                 match3.setGem(row, col, gem);
             }
         }
+    }
+
+    createGem(x, y, id) {
+        let gem = this.add.sprite(x, y, 'gems', id);
+        gem.setDisplaySize(gemSize, gemSize);
+        gem.setInteractive();
+        this.input.on("gameobjectover", onGemOver);
+        this.input.on("gameobjectout", onGemOut);
+        this.input.on("gameobjectdown", onGemDown);
+        return gem;
     }
 }
 
@@ -110,6 +115,7 @@ function swapGems(gem1, gem2, callback) {
 function onCompleteSwapGems(tween, targets, gem1, gem2) {
     if (!match3.hasMatch()) {
         swapGems(gem1, gem2, null);
+        return;
     }
 
     let match = match3.getMatchedGems();
@@ -120,7 +126,72 @@ function onCompleteSwapGems(tween, targets, gem1, gem2) {
         delay: 30,
         alpha: 0,
         onComplete: function (tween, targets) {
-            // destroy gems
+            destroyGems(targets);
         }
     });
+}
+
+function destroyGems(gems) {
+    let velocity = 180;
+    let scene = gems[0].scene;
+    let height = scene.game.config.height;
+    let topY = (height - boardSize) / 2 - cellSize / 2;
+    let gemTransfers = [];
+
+    let deepestGemInCol = [];
+    gems.forEach(gem => {
+        gem.toDestroy = true;
+        let c = gem.col;
+        if (!deepestGemInCol[c] || gem.row > deepestGemInCol[c].row) {
+            deepestGemInCol[c] = gem;
+        }
+    });
+    for (let col = 0; col < ncols; col++) {
+        if (!deepestGemInCol[col]) { continue; }
+        let gem = deepestGemInCol[col]
+        let shift = 1;
+        let row = gem.row;
+        let x = gem.x;
+        let y = gem.y;
+        let targetRow = row;
+        let targetCol = col;
+        while (row > 0) {
+            row -= 1;
+            let g = match3.getGem(row, col);
+            if (g.toDestroy) {
+                shift += 1;
+            }
+            else {
+                gemTransfers.push({ gem: g, dist: shift, x: x, y: y });
+                match3.setId(targetRow, col, match3.getId(g.row, g.col));
+                match3.setGem(targetRow, targetCol, g);
+                y -= cellSize;
+                targetRow -= 1;
+            }
+        }
+        let spawnX = x;
+        let spawnY = topY;
+        for (let i = 0; i < shift; i++) {
+            let newGemId = Math.floor(Math.random() * ngems);
+            let newGem = scene.createGem(spawnX, spawnY, newGemId);
+            gemTransfers.push({ gem: newGem, dist: shift, x: x, y: y });
+            match3.setId(targetRow, col, newGemId);
+            match3.setGem(targetRow, targetCol, newGem);
+            y -= cellSize;
+            spawnY -= cellSize;
+            targetRow -= 1;
+        }
+    }
+
+    gemTransfers.forEach(transfer => {
+        scene.tweens.add({
+            targets: transfer.gem,
+            duration: transfer.dist * velocity,
+            x: transfer.x,
+            y: transfer.y,
+            ease: "Power1"
+        });
+    });
+
+    gems.forEach(gem => { gem.destroy(); });
 }

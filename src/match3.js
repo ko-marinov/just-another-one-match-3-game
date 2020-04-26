@@ -24,6 +24,10 @@ export class Match3 {
         return this.m[i][j];
     }
 
+    setId(i, j, id) {
+        this.m[i][j].id = id;
+    }
+
     getId(i, j) {
         return this.get(i, j).id;
     }
