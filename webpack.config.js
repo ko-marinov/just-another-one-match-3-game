@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ZipPlugin = require('zip-webpack-plugin');
 
 module.exports = {
     entry: './src/index.js',
@@ -24,5 +25,11 @@ module.exports = {
             },
         ],
     },
-    plugins: [new HtmlWebpackPlugin()]
+    plugins: [
+        new HtmlWebpackPlugin(),
+        new ZipPlugin({
+            filename: "jaom3.zip",
+            exclude: /\.zip$/
+        })
+    ]
 };
