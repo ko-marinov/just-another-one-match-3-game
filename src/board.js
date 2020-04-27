@@ -73,6 +73,7 @@ export class Board extends Phaser.Scene {
 }
 
 var selectedGem = null;
+var processingMatches = false;
 
 function onGemOver(pointer) {
     this.setDisplaySize(gemSize + 6, gemSize + 6);
@@ -85,6 +86,9 @@ function onGemOut(pointer) {
 }
 
 function onGemDown(pointer) {
+    if (processingMatches) {
+        return;
+    }
     if (selectedGem != null) {
         if (this === selectedGem) {
             selectedGem = null;
@@ -137,7 +141,11 @@ function onCompleteSwapGems(tween, targets, gem1, gem2) {
 
 function handleMatches(scene) {
     let match = match3.getMatchedGems();
-    if (!match.length) { return; }
+    if (!match.length) {
+        processingMatches = false;
+        return;
+    }
+    processingMatches = true;
     scene.tweens.add({
         targets: match,
         duration: 300,
